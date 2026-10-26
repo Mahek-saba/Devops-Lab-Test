@@ -15,7 +15,7 @@ def run_services():
 
     # Start FastAPI backend
     backend_proc = subprocess.Popen([
-        python_exe, "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"
+        python_exe, "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8000", "--reload"
     ])
     
     time.sleep(2)

@@ -18,8 +18,10 @@ def get_engine():
         except Exception as e:
             print(f"[Database] PostgreSQL connection failed ({e}). Falling back to SQLite development database.")
     
-    # SQLite fallback (dev mode)
-    sqlite_url = "sqlite:///./salesgenie.db"
+    # SQLite fallback (dev mode) - use absolute path to project directory
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    db_file = os.path.join(base_dir, "salesgenie.db")
+    sqlite_url = f"sqlite:///{db_file}"
     return create_engine(sqlite_url, connect_args={"check_same_thread": False})
 
 engine = get_engine()

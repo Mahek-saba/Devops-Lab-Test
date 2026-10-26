@@ -567,12 +567,13 @@ if "scores_cache" not in st.session_state:
 # ==============================================================================
 # REUSABLE API HELPER FUNCTIONS
 # ==============================================================================
-REQUEST_TIMEOUT = 12
+REQUEST_TIMEOUT = 8
 
-def api_get(endpoint: str, params: dict = None):
+def api_get(endpoint: str, params: dict = None, timeout: float = None):
     url = f"{st.session_state.backend_url.rstrip('/')}{endpoint}"
+    req_timeout = timeout if timeout is not None else REQUEST_TIMEOUT
     try:
-        response = requests.get(url, params=params, timeout=REQUEST_TIMEOUT)
+        response = requests.get(url, params=params, timeout=req_timeout)
         if response.status_code == 200:
             return True, response.json()
         elif response.status_code == 404:
@@ -584,10 +585,11 @@ def api_get(endpoint: str, params: dict = None):
     except Exception as e:
         return False, {"error": str(e)}
 
-def api_post(endpoint: str, json_data: dict = None):
+def api_post(endpoint: str, json_data: dict = None, timeout: float = None):
     url = f"{st.session_state.backend_url.rstrip('/')}{endpoint}"
+    req_timeout = timeout if timeout is not None else REQUEST_TIMEOUT
     try:
-        response = requests.post(url, json=json_data, timeout=REQUEST_TIMEOUT)
+        response = requests.post(url, json=json_data, timeout=req_timeout)
         if response.status_code in [200, 201]:
             return True, response.json()
         elif response.status_code == 404:
@@ -600,14 +602,14 @@ def api_post(endpoint: str, json_data: dict = None):
         return False, {"error": str(e)}
 
 def fetch_leads():
-    success, data = api_get("/leads/")
+    success, data = api_get("/leads/", timeout=5)
     if success and isinstance(data, list):
         st.session_state.leads_cache = data
         return data
     return []
 
-# Fetch active leads initially if needed
-health_ok, _ = api_get("/health")
+# Fetch active leads initially if needed (fast 2s timeout for instant check)
+health_ok, _ = api_get("/health", timeout=2)
 if not st.session_state.leads_cache and health_ok:
     fetch_leads()
 
@@ -1444,14 +1446,14 @@ with tab_dash:
         for l in all_leads:
             lid = l["lead_id"]
             sdata = st.session_state.scores_cache.get(lid)
-            sval = sdata.get("lead_score") if sdata else "Unscored"
+            sval = f"{sdata.get('lead_score')}" if (sdata and sdata.get("lead_score") is not None) else "Unscored"
             pval = sdata.get("priority_level") if sdata else "Pending"
             leaderboard.append({
                 "ID": f"#{lid}",
-                "Company": l.get("company_name"),
-                "Contact": l.get("contact_name"),
-                "Industry": l.get("industry"),
-                "Stage": l.get("funding_stage"),
+                "Company": l.get("company_name", ""),
+                "Contact": l.get("contact_name", ""),
+                "Industry": l.get("industry", ""),
+                "Stage": l.get("funding_stage", ""),
                 "Score": sval,
                 "Priority": pval,
                 "Stage Status": l.get("lead_status", "New")
@@ -1459,10 +1461,10 @@ with tab_dash:
 
         def skey(x):
             s = x["Score"]
-            return s if isinstance(s, int) else -1
+            return int(s) if s.isdigit() else -1
 
         leaderboard.sort(key=skey, reverse=True)
-        st.dataframe(pd.DataFrame(leaderboard), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(leaderboard).astype(str), use_container_width=True, hide_index=True)
 
     if st.button("🔄 Refresh Live Dashboard Analytics", use_container_width=True):
         st.rerun()
