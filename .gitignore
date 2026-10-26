@@ -1,0 +1,32 @@
+# Environment Variables
+.env
+.env.local
+*.env
+
+# Python Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# SQLite Database
+*.db
+*.sqlite3
+
+# Logs & Diagnostics
+*.log
+install_guide_*.txt
+exec_guide_*.txt
+
+# IDE & Editor Configs
+.vscode/
+.idea/
+.antigravity-ide/
+.DS_Store
